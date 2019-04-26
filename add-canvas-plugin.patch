@@ -1,0 +1,149 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 32d9f42045..73fdc95707 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1329,6 +1329,7 @@ if(ENABLE_PLUGINS)
+ 	add_custom_target(plugins)
+ 	set_target_properties(plugins PROPERTIES FOLDER "Plugins")
+ 	set(PLUGIN_SRC_DIRS
++		plugins/canvas
+ 		plugins/docsis
+ 		plugins/ethercat
+ 		plugins/gryphon
+diff --git a/Makefile.am b/Makefile.am
+index 6db4868ad0..18d4740cdc 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -352,6 +352,7 @@ dist_wimaxasncp_DATA = \
+ if HAVE_PLUGINS
+ -include plugins/Custom.make
+ plugin_ldadd = $(_CUSTOM_plugin_ldadd_) \
++	-dlopen plugins/canvas/canvas.la \
+ 	-dlopen plugins/docsis/docsis.la \
+ 	-dlopen plugins/ethercat/ethercat.la \
+ 	-dlopen plugins/gryphon/gryphon.la \
+diff --git a/configure.ac b/configure.ac
+index 586a21c2a2..7992d3f509 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -3000,6 +3000,7 @@ AC_CONFIG_FILES(
+   packaging/svr4/pkginfo
+   packaging/wix/Makefile
+   plugins/Makefile
++  plugins/canvas/Makefile
+   plugins/docsis/Makefile
+   plugins/easy_codec/Makefile
+   plugins/ethercat/Makefile
+diff --git a/epan/Makefile.am b/epan/Makefile.am
+index 09024e109b..aa6204b892 100644
+--- a/epan/Makefile.am
++++ b/epan/Makefile.am
+@@ -462,6 +462,9 @@ if HAVE_PLUGINS
+ if ENABLE_STATIC
+ -include ../plugins/Custom.make
+ plugin_src = \
++	../plugins/canvas/packet-can-dbc.c \
++	../plugins/canvas/packet-obd-ii.c \
++	../plugins/canvas/packet-obd-ii-live-view.c \
+ 	../plugins/docsis/packet-docsis.c \
+ 	../plugins/docsis/packet-macmgmt.c \
+ 	../plugins/docsis/packet-tlv.c \
+diff --git a/packaging/nsis/wireshark.nsi b/packaging/nsis/wireshark.nsi
+index 27af10d2ec..7027c8a21f 100644
+--- a/packaging/nsis/wireshark.nsi
++++ b/packaging/nsis/wireshark.nsi
+@@ -1006,6 +1006,7 @@ SectionGroup "Plugins & Extensions" SecPluginsGroup
+ Section "Dissector Plugins" SecPlugins
+ ;-------------------------------------------
+ SetOutPath '$INSTDIR\plugins\${VERSION}'
++File "${STAGING_DIR}\plugins\canvas.dll"
+ File "${STAGING_DIR}\plugins\docsis.dll"
+ File "${STAGING_DIR}\plugins\ethercat.dll"
+ File "${STAGING_DIR}\plugins\gryphon.dll"
+diff --git a/plugins/Makefile.am b/plugins/Makefile.am
+index 2f8f7a0ab6..296b809802 100644
+--- a/plugins/Makefile.am
++++ b/plugins/Makefile.am
+@@ -22,6 +22,7 @@
+ -include Custom.make
+ 
+ SUBDIRS = $(_CUSTOM_SUBDIRS_) \
++	canvas \
+ 	docsis \
+ 	easy_codec \
+ 	ethercat \
+diff --git a/plugins/canvas/Makefile.am b/plugins/canvas/Makefile.am
+new file mode 100644
+index 0000000000..7182571fd6
+--- /dev/null
++++ b/plugins/canvas/Makefile.am
+@@ -0,0 +1,69 @@
++# Makefile.am
++#
++# Wireshark - Network traffic analyzer
++# By Gerald Combs <gerald@wireshark.org>
++# Copyright 1998 Gerald Combs
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License
++# as published by the Free Software Foundation; either version 2
++# of the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
++
++include $(top_srcdir)/Makefile.am.inc
++include ../Makefile.am.inc
++
++# the name of the plugin
++PLUGIN_NAME = canvas
++
++# Non-generated sources to be scanned for registration routines
++NONGENERATED_REGISTER_C_FILES = \
++	packet-obd-ii.c
++
++# Non-generated sources
++NONGENERATED_C_FILES = \
++	$(NONGENERATED_REGISTER_C_FILES)
++
++# Headers.
++CLEAN_HEADER_FILES = \
++	cCLLog.h \
++	strtoi.h
++
++HEADER_FILES = \
++	$(CLEAN_HEADER_FILES)
++
++plugin_LTLIBRARIES = canvas.la
++
++canvas_la_SOURCES = \
++	plugin.c \
++	moduleinfo.h \
++	$(SRC_FILES)	\
++	$(HEADER_FILES)
++
++canvas_la_CPPFLAGS = $(AM_CPPFLAGS) $(PLUGIN_CPPFLAGS) ${GTK_CFLAGS}
++
++canvas_la_CFLAGS = $(AM_CFLAGS) $(PLUGIN_CFLAGS) ${GTK_CFLAGS}
++
++canvas_la_LDFLAGS = $(PLUGIN_LDFLAGS) ${GTK_LIBS}
++
++CLEANFILES = \
++	canvas \
++	*~
++
++DISTCLEANFILES = \
++	plugin.c
++
++MAINTAINERCLEANFILES = \
++	Makefile.in
++
++EXTRA_DIST = \
++	plugin.rc.in		\
++	CMakeLists.txt
