@@ -81,3 +81,23 @@ If you only want to build the plugins and not the entire Wireshark
 ```console
 $ make -C plugins
 ```
+
+
+Streaming CAN from remote hosts
+-------------------------------
+
+If you have a Linux system connected to a CAN bus you may want to stream
+the CAN data to your computer to confortably analyze it from your computer with Wireshark. One obvious method is to capture a log file and then load it on your computer but it takes time and means no live usage... Here I propose you 2 methods to stream the CAN bus on Wireshark like if your computer was directly connected to the CAN bus.
+
+This first one only needs to have can-utils tools installed on the remote host. It will stream the content of the remote CAN bus to a local virtual CAN interface that you will then be able to use from Wireshark like any interface on your system:
+
+```console
+$ modprobe vcan
+$ ip link add dev vcan0 type vcan
+$ ssh W.X.Y.Z "candump -L can0" | canplayer vcan0=can0
+```
+
+The second one will need to have tcpdump installed on the remote host (you can find static binaries for multiple architectures on the Internet). It will stream the tcpdump content directly to your Wireshark:
+```console
+$ ssh W.X.Y.Z "tcpdump -i can0 -s0 -w -" | ./wireshark-gtk -k -i -
+```
