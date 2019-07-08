@@ -22,6 +22,11 @@ you want or need to.
 Plugin binaries
 ---------------
 
+NOTE: Users of a recent Ubuntu release (such as 19.04) can skip this section 
+and have to proceed to build from source, as the Ubuntu package repositories do 
+no longer provide Wireshark-gtk in version 2.4 but only 2.6. 
+Below build process was tested on Ubuntu 19.04 though and works. 
+
 First a note of caution, this plugin only works with Wireshark-gtk (or
 Wireshark-legacy in some distribution) version 2.4.X. So you first
 need to be sure to have the right version of Wireshark installed on
